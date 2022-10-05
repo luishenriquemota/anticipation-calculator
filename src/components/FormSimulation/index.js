@@ -1,88 +1,75 @@
 import { StyledForm } from "./style"
-import { useEffect, useState, useCallback } from "react"
 import { useCalculate } from "../../providers/Calculate"
-import * as yup from "yup"
-import { useForm } from "react-hook-form"
-import { yupResolver } from "@hookform/resolvers/yup"
 import axios from "axios"
-import Input from "../input"
+import { useState } from "react"
+import { NumericFormat } from "react-number-format"
 
 
 const FormSimulation = () => {
 
   const {setAnswer} = useCalculate();
+  const [user, setUser] = useState({})
 
- 
-  const schema = yup.object().shape({
-    amount: yup.number().required("Insira um valor para a simulação."),
-    installments: yup.number().required("Insira a quantidade de parcelas que deseja."),
-    mdr: yup.number().required("Insira o valor da taxa."),
-    days: yup.string()
-  })
+  const submitTeste = (e) => {
+    e.preventDefault()
+    let days = []
 
-  const {register, handleSubmit, formState:{errors}} = useForm({
-    resolver: yupResolver(schema)
-  })
+    const str1 = user.amount.replace(/\D/g, '')
 
-
-    const submit = (data) => {
-      let days = []
-
-      if(data.days){
-        days = data.days.split(",").map((item) => Number(item))
-      }
-
-      const noDays = {
-        amount: data.amount,
-        installments: data.installments,
-        mdr: data.mdr,
-      }
-
-      const withDays = {
-        amount: data.amount,
-        installments: data.installments,
-        mdr: data.mdr,
-        days: days
-
-      }
-
-      const req = data.days ? withDays : noDays
-      
-      console.log(data)
-      axios.post("https://frontend-challenge-7bu3nxh76a-uc.a.run.app", req)
-      .then((res)=> {
-        setAnswer(res.data)
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+    
+    if(user.days){
+      days = user.days.split("-").map((item) => Number(item))
+    }
+    
+    const noDays = {
+      amount: Number(str1.substring(0, str1.length -2)),
+      installments: user.installments,
+      mdr: user.mdr
     }
 
-    const [user, setUser] = useState({})
+    const withDays = {
+      amount: Number(str1.substring(0, str1.length -2)),
+      installments: user.installments,
+      mdr: user.mdr,
+      days: days
+    }
 
-    const handleTeste = useCallback((e) => {
-      // setUser({... user, e.target.value})
-      // console.log(e.target.value)
-      console.log(user)
-    }, [user]);
+    const req = user.days ? withDays : noDays
 
+    axios.post("https://frontend-challenge-7bu3nxh76a-uc.a.run.app", req)
+    .then((res)=> {
+      setAnswer(res.data)
+      setUser({...user})
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+  }
+    
   return(
-    <StyledForm onSubmit={handleSubmit(submit)}>
+    <StyledForm onSubmit={(e) => submitTeste(e)}>
         <h2>Simule sua Antecipação</h2>
         <label>Informe o valor da venda * 
-          <input {...register("amount")}/>
+          <NumericFormat
+           required={true}
+           prefix={"R$ "} 
+           thousandSeparator={"."} 
+           decimalSeparator={","} 
+           decimalScale={2} 
+           fixedDecimalScale={true}
+           onChange={(e) => setUser({...user, "amount": e.target.value})}
+          />
         </label>
         <label>Em quantas parcelas * 
-          <input {...register("installments")}/>
+          <input required onChange={(e) => setUser({...user, "installments": e.target.value})}/>
         </label>
         <label>Informe o percentual de MDR * 
-          <input {...register("mdr")}/>
+          <input required onChange={(e) => setUser({...user, "mdr": e.target.value})}/>
         </label>
         <label>Informar dias a serem calculados (opcional)
-          <input {...register("days")}/>
+          <input placeholder="Ex: 10-30-40" onChange={(e) => setUser({...user, "days": e.target.value})}/>
         </label>
-        <button onClick={() => console.log(user)}>Simular</button>
-        <Input placeholder="ola" name="teste" onChange={handleTeste}/>
+        <button type="submit">Simular</button>
       </StyledForm>
   )
 }

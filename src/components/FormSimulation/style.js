@@ -22,6 +22,15 @@ label{
 
 input{
   height:20px;
-  border-color: ${(props) => props.color || "green"}
+ 
+}
+
+button{
+  cursor: pointer;
+  background-color: transparent;
+  font-size: 15px;
+  :hover{
+    background-color: #e2e2e2;
+  }
 }
 `
